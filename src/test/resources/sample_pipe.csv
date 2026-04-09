@@ -1,0 +1,5 @@
+name,description
+foo,"has | pipe char"
+bar,"line1
+line2"
+baz,"quote: ""quoted"""
