@@ -165,26 +165,33 @@ try (InputStream inputStream = Files.newInputStream(Path.of("report.xlsx"))) {
 
 ## Output Behavior
 
-This library is not trying to force every row into a plain table. It tries to generate Markdown that is still pleasant to read.
+Each sheet is rendered as a single complete Markdown table. Every row in the sheet becomes a table row — no content is split into separate text blocks.
 
 ### Multi-sheet workbooks are expanded in order
 
-Each sheet is rendered into the same Markdown output and starts with a level-1 heading:
+Each sheet is prefixed with a level-1 heading, followed by one table:
 
 ```md
 # Sheet1
 
-| ... |
+| A | B | C |
+| --- | --- | --- |
+| ... | ... | ... |
 
 # Sheet2
 
-| ... |
+| A | B | C |
+| --- | --- | --- |
+| ... | ... | ... |
 ```
 
-### Single-value rows become text blocks
+### Table header uses Excel column letters
 
-Some spreadsheets are really a mix of titles, notes, and tables.  
-When a row contains only one meaningful cell, it is rendered as plain text instead of an awkward fake table row.
+The first row of the Markdown table is always the column-letter header (`A`, `B`, `C`, …, `Z`, `AA`, `AB`, …). Every row from the original sheet becomes a data row. Column coordinates match the original Excel layout, so `A` in the Markdown table is always column A in the spreadsheet.
+
+### Empty rows are preserved
+
+Blank rows in the sheet appear as empty rows in the table so that row positions stay aligned with the original spreadsheet.
 
 ### Newlines inside cells become `<br>`
 
@@ -196,7 +203,7 @@ So Markdown does not mistake content for a column separator.
 
 ## Best Fit
 
-This project is a good fit when you want spreadsheet content to become documentation-friendly text, not a pixel-perfect visual clone.
+This project is a good fit when you want spreadsheet content to become a predictable, position-preserving grid that LLMs or documentation tools can consume directly.
 
 Great for:
 

@@ -7,7 +7,7 @@
     <groupId>cn.creekmoon</groupId>
     <name>excel-to-markdown</name>
     <artifactId>excel-to-markdown</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
     <repositories>
         <repository>
             <id>nexus-tencentyun</id>

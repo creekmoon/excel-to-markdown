@@ -88,13 +88,15 @@ String md = Excel2MarkdownUtils.csv2Markdown(new File("table.csv"));
 
 ## 6. Output Semantics
 
-Knowing these rules lets you predict the Markdown shape:
+Knowing these rules lets you predict the Markdown shape exactly:
 
-1. **Multi-sheet workbooks** — Each sheet is prefixed with a level-1 heading (`# SheetName`). Sheets appear in workbook order.
-2. **Single-value rows** — If a row has only one populated cell, it is rendered as plain text (not a table row) to avoid awkward one-column tables.
-3. **Newlines in cells** — Converted to `<br>` so Markdown tables remain valid.
-4. **Pipe characters (`\|`) in cells** — Escaped automatically so they do not break table syntax.
-5. **Encoding** — Output is always UTF-8.
+1. **Whole-sheet single table** — Every sheet produces exactly one Markdown table. No rows are split into separate text blocks, regardless of content.
+2. **Column-letter header** — The header row is always the Excel column letters (`A`, `B`, `C`, ..., `Z`, `AA`, `AB`, ...). The first data row in the Markdown table corresponds to row 1 of the sheet, not a detected header.
+3. **Original column positions preserved** — Leading blank columns are not stripped. Column `A` in the Markdown table is always column A in the original spreadsheet.
+4. **Empty rows preserved** — Blank rows appear as empty table rows, keeping row-number alignment with the source.
+5. **Newlines in cells** — Converted to `<br>` so Markdown table syntax stays valid.
+6. **Pipe characters (`|`) in cells** — Escaped automatically so they do not break table structure.
+7. **Encoding** — Output is always UTF-8.
 
 ## 7. Exception Model
 

@@ -203,14 +203,14 @@ class Excel2MarkdownUtilsTest {
 
     @Test
     void csv2Markdown_stream_singleRow_onlyHeaderAndSeparator() throws Exception {
-        // 仅有一行数据时：表头行 + 分隔行，无数据行
+        // 新语义：列字母表头行 + 分隔行 + 1 条数据行 = 3 行
         String csvContent = "A,B,C\n";
         InputStream is = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
         String result = Excel2MarkdownUtils.csv2Markdown(is);
 
         long rowCount = result.lines().filter(l -> l.startsWith("|")).count();
-        // 期望：1 个表头行 + 1 个分隔行 = 2 行
-        assertEquals(2, rowCount);
+        // 期望：列字母表头行 + 分隔行 + 数据行 = 3 行
+        assertEquals(3, rowCount);
     }
 
     @Test
@@ -377,18 +377,21 @@ class Excel2MarkdownUtilsTest {
 
     @Test
     void csv2Markdown_outputFormat_headerSeparatorDataRowOrder() throws Exception {
+        // 新语义：第 1 行是列字母表头（A, B），第 2 行是分隔行，第 3 行起是原始数据
         String csvContent = "Name,Score\nAlice,90\nBob,85\n";
         InputStream is = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
         String result = Excel2MarkdownUtils.csv2Markdown(is);
 
         String[] lines = result.lines().filter(l -> !l.isBlank()).toArray(String[]::new);
-        // 第 1 行：表头
-        assertTrue(lines[0].contains("Name") && lines[0].contains("Score"));
+        // 第 1 行：列字母表头（A、B）
+        assertTrue(lines[0].contains("| A |") || lines[0].startsWith("| A "), "first row must be column letter header");
         // 第 2 行：分隔行（全是 ---）
         assertTrue(lines[1].matches("\\|( --- \\|)+"));
-        // 第 3、4 行：数据行
-        assertTrue(lines[2].contains("Alice"));
-        assertTrue(lines[3].contains("Bob"));
+        // 第 3 行：原 CSV 第一行数据（Name, Score）
+        assertTrue(lines[2].contains("Name") && lines[2].contains("Score"));
+        // 第 4、5 行：后续数据
+        assertTrue(lines[3].contains("Alice"));
+        assertTrue(lines[4].contains("Bob"));
     }
 
     @Test
@@ -654,19 +657,19 @@ class Excel2MarkdownUtilsTest {
         try (InputStream is = classpathStream("美国卡派运费报价矩阵.xlsx")) {
             String result = Excel2MarkdownUtils.xlsx2Markdown(is);
 
-            // 封面标题和说明区应拆成文本块 + 表格块，而不是带左侧空白列的伪表格
-            assertTrue(result.contains("美国卡派运费报价矩阵\n\nUS Ground Freight Rate Matrix - 2024"),
-                    "封面主标题和副标题应作为文本块输出");
-            assertTrue(result.contains("报价说明\n\n| 生效日期 | 2024-01-01 |"),
-                    "报价说明应单独成块，键值区应输出为表格");
-            assertTrue(result.contains("工作表索引\n\n| 工作表名称 | 说明 |"),
-                    "工作表索引应单独成块，索引内容应输出为表格");
-            assertTrue(result.contains("美国卡派基础运费报价矩阵 (USD)\n\nGround Freight Rate Matrix by Zone & Weight"),
-                    "基础运费矩阵标题应作为文本块输出");
-            assertFalse(result.contains("|  | 美国卡派运费报价矩阵 |"),
-                    "不应保留整张 sheet 共同的左侧空白列");
-            assertFalse(result.contains("|  | 美国卡派基础运费报价矩阵 (USD) |"),
-                    "基础运费矩阵标题不应带左侧空白占位列");
+            // 新语义：每个 sheet 输出为一张完整表，表头为列字母（A, B, C, ...）
+            assertTrue(result.contains("| A |"), "table header must use column letters");
+
+            // 内容作为表格单元格值出现，不再是独立文本块
+            assertTrue(result.contains("美国卡派运费报价矩阵"), "title content must appear in output");
+            assertTrue(result.contains("基础运费矩阵"), "freight matrix content must appear in output");
+            assertTrue(result.contains("Zone 2"), "zone labels must appear in output");
+
+            // 不再有"单值行文本块 + 接续表格"的拆分模式
+            assertFalse(result.contains("美国卡派运费报价矩阵\n\nUS Ground Freight Rate Matrix"),
+                    "title must be a table cell, not a standalone text block");
+            assertFalse(result.contains("报价说明\n\n|"),
+                    "section heading must be a table cell, not a text block preceding a table");
         }
     }
 

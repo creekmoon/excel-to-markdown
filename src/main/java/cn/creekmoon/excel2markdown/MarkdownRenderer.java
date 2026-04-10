@@ -6,109 +6,69 @@ import java.util.List;
 class MarkdownRenderer {
 
     private final StringBuilder buffer = new StringBuilder();
-    private final List<List<String>> currentTableRows = new ArrayList<>();
+    private final List<List<String>> currentSheetRows = new ArrayList<>();
+    private boolean sheetStarted = false;
 
     void beginSheet(String sheetName) {
-        flushTable();
+        flushSheet();
         if (buffer.length() > 0) {
             buffer.append("\n");
         }
         buffer.append("# ").append(sheetName).append("\n\n");
+        sheetStarted = true;
     }
 
     void addRow(List<String> cells) {
-        List<String> normalizedRow = normalizeRow(cells);
-        if (normalizedRow.isEmpty()) {
-            flushTable();
-            appendBlankLine();
-            return;
-        }
-
-        /* 单行文本块单独输出，多列表格块连续收集 */
-        if (countNonBlankCells(normalizedRow) == 1) {
-            flushTable();
-            buffer.append(escapeCell(extractSingleCellValue(normalizedRow))).append("\n\n");
-            return;
-        }
-        currentTableRows.add(normalizedRow);
+        currentSheetRows.add(cells == null ? List.of() : new ArrayList<>(cells));
     }
 
     String render() {
-        flushTable();
+        flushSheet();
         return buffer.toString().trim();
     }
 
-    private void flushTable() {
-        if (currentTableRows.isEmpty()) {
+    private void flushSheet() {
+        if (!sheetStarted && currentSheetRows.isEmpty()) {
             return;
         }
-        int columnCount = currentTableRows.stream()
+
+        int columnCount = currentSheetRows.stream()
                 .mapToInt(List::size)
                 .max()
                 .orElse(0);
+
         if (columnCount == 0) {
-            currentTableRows.clear();
+            currentSheetRows.clear();
+            sheetStarted = false;
             return;
         }
 
-        buffer.append(buildRow(padRow(currentTableRows.get(0), columnCount))).append("\n");
+        /* header row: A, B, C, ..., Z, AA, AB, ... */
+        List<String> headerCells = new ArrayList<>(columnCount);
+        for (int i = 0; i < columnCount; i++) {
+            headerCells.add(columnLabel(i));
+        }
+        buffer.append(buildRow(headerCells)).append("\n");
         buffer.append(buildSeparatorRow(columnCount)).append("\n");
-        for (int i = 1; i < currentTableRows.size(); i++) {
-            buffer.append(buildRow(padRow(currentTableRows.get(i), columnCount))).append("\n");
+
+        for (List<String> row : currentSheetRows) {
+            buffer.append(buildRow(padRow(row, columnCount))).append("\n");
         }
         buffer.append("\n");
-        currentTableRows.clear();
-    }
 
-    private List<String> normalizeRow(List<String> cells) {
-        if (cells == null || cells.isEmpty()) {
-            return List.of();
-        }
-        int lastNonBlankIndex = -1;
-        for (int i = cells.size() - 1; i >= 0; i--) {
-            if (!isBlank(cells.get(i))) {
-                lastNonBlankIndex = i;
-                break;
-            }
-        }
-        if (lastNonBlankIndex < 0) {
-            return List.of();
-        }
-        return new ArrayList<>(cells.subList(0, lastNonBlankIndex + 1));
+        currentSheetRows.clear();
+        sheetStarted = false;
     }
 
     private List<String> padRow(List<String> cells, int columnCount) {
-        List<String> paddedRow = new ArrayList<>(cells);
-        while (paddedRow.size() < columnCount) {
-            paddedRow.add("");
+        if (cells.size() == columnCount) {
+            return cells;
         }
-        return paddedRow;
-    }
-
-    private int countNonBlankCells(List<String> cells) {
-        int count = 0;
-        for (String cell : cells) {
-            if (!isBlank(cell)) {
-                count++;
-            }
+        List<String> padded = new ArrayList<>(cells);
+        while (padded.size() < columnCount) {
+            padded.add("");
         }
-        return count;
-    }
-
-    private String extractSingleCellValue(List<String> cells) {
-        for (String cell : cells) {
-            if (!isBlank(cell)) {
-                return cell;
-            }
-        }
-        return "";
-    }
-
-    private void appendBlankLine() {
-        if (buffer.length() == 0 || buffer.charAt(buffer.length() - 1) == '\n') {
-            return;
-        }
-        buffer.append("\n\n");
+        return padded;
     }
 
     private String buildRow(List<String> cells) {
@@ -131,11 +91,24 @@ class MarkdownRenderer {
         if (value == null || value.isEmpty()) {
             return "";
         }
-        /* 转义管道符，单元格内换行替换为 <br> */
-        return value.replace("|", "\\|").replace("\r\n", "<br>").replace("\n", "<br>").replace("\r", "<br>");
+        return value.replace("|", "\\|")
+                .replace("\r\n", "<br>")
+                .replace("\n", "<br>")
+                .replace("\r", "<br>");
     }
 
-    private boolean isBlank(String value) {
-        return value == null || value.isBlank();
+    /**
+     * Converts a 0-based column index to an Excel-style column label.
+     * 0 -> A, 25 -> Z, 26 -> AA, 27 -> AB, ...
+     */
+    static String columnLabel(int index) {
+        StringBuilder label = new StringBuilder();
+        int n = index + 1;
+        while (n > 0) {
+            n--;
+            label.insert(0, (char) ('A' + n % 26));
+            n /= 26;
+        }
+        return label.toString();
     }
 }
