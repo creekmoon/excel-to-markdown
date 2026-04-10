@@ -1,6 +1,6 @@
 # excel-to-markdown
 
-[English](README.en.md) | [简体中文](README.md)
+[English](README.en.md) | [简体中文](README.md) | [🤖 LLM Reference](LLM.md)
 
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/cn.creekmoon/excel-to-markdown/badge.svg)](https://mvnrepository.com/artifact/cn.creekmoon/excel-to-markdown)
 [![License](http://img.shields.io/:license-apache-brightgreen.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
