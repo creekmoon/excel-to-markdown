@@ -1,6 +1,7 @@
 package cn.creekmoon.excel2markdown;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 class MarkdownRenderer {
@@ -62,7 +63,7 @@ class MarkdownRenderer {
 
     private List<String> normalizeRow(List<String> cells) {
         if (cells == null || cells.isEmpty()) {
-            return List.of();
+            return Collections.emptyList();
         }
         int lastNonBlankIndex = -1;
         for (int i = cells.size() - 1; i >= 0; i--) {
@@ -72,7 +73,7 @@ class MarkdownRenderer {
             }
         }
         if (lastNonBlankIndex < 0) {
-            return List.of();
+            return Collections.emptyList();
         }
         return new ArrayList<>(cells.subList(0, lastNonBlankIndex + 1));
     }
@@ -136,6 +137,6 @@ class MarkdownRenderer {
     }
 
     private boolean isBlank(String value) {
-        return value == null || value.isBlank();
+        return value == null || value.trim().isEmpty();
     }
 }

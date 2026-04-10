@@ -44,8 +44,20 @@ class Excel2MarkdownUtilsTest {
         Path outDir = Paths.get("target", "test-output");
         Files.createDirectories(outDir);
         Path outFile = outDir.resolve(filename);
-        Files.writeString(outFile, content, StandardCharsets.UTF_8);
+        Files.write(outFile, content.getBytes(StandardCharsets.UTF_8));
         System.out.println("[test-output] " + outFile.toAbsolutePath());
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private java.util.stream.Stream<String> lines(String text) {
+        return java.util.Arrays.stream(text.split("\\r?\\n|\\r", -1));
+    }
+
+    private String readString(Path path, java.nio.charset.Charset charset) throws IOException {
+        return new String(Files.readAllBytes(path), charset);
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -77,7 +89,7 @@ class Excel2MarkdownUtilsTest {
         String result = Excel2MarkdownUtils.xlsx2Markdown(xlsx);
 
         assertNotNull(result);
-        assertFalse(result.isBlank());
+        assertFalse(isBlank(result));
         assertTrue(result.contains("|"));
         assertTrue(result.contains("---"));
         saveOutput(result, "sample2.xlsx.md");
@@ -101,7 +113,7 @@ class Excel2MarkdownUtilsTest {
             String result = Excel2MarkdownUtils.xlsx2Markdown(is);
 
             assertNotNull(result);
-            assertFalse(result.isBlank());
+            assertFalse(isBlank(result));
             assertTrue(result.contains("|"));
             assertTrue(result.contains("---"));
             saveOutput(result, "sample2-stream.xlsx.md");
@@ -146,7 +158,7 @@ class Excel2MarkdownUtilsTest {
         String result = Excel2MarkdownUtils.csv2Markdown(csv);
 
         assertNotNull(result);
-        assertFalse(result.isBlank());
+        assertFalse(isBlank(result));
         assertTrue(result.contains("|"));
         assertTrue(result.contains("---"));
         assertTrue(result.contains("姓名"));
@@ -208,7 +220,7 @@ class Excel2MarkdownUtilsTest {
         InputStream is = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
         String result = Excel2MarkdownUtils.csv2Markdown(is);
 
-        long rowCount = result.lines().filter(l -> l.startsWith("|")).count();
+        long rowCount = lines(result).filter(l -> l.startsWith("|")).count();
         // 期望：1 个表头行 + 1 个分隔行 = 2 行
         assertEquals(2, rowCount);
     }
@@ -220,7 +232,7 @@ class Excel2MarkdownUtilsTest {
 
         // 空输入应返回空字符串，而不是抛异常
         assertNotNull(result);
-        assertTrue(result.isBlank());
+        assertTrue(isBlank(result));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -253,8 +265,8 @@ class Excel2MarkdownUtilsTest {
         Excel2MarkdownUtils.xlsx2MarkdownFile(source, target);
 
         assertTrue(target.exists());
-        String content = Files.readString(target.toPath(), StandardCharsets.UTF_8);
-        assertFalse(content.isBlank());
+        String content = readString(target.toPath(), StandardCharsets.UTF_8);
+        assertFalse(isBlank(content));
         assertTrue(content.contains("|"));
         assertTrue(content.contains("---"));
     }
@@ -299,8 +311,8 @@ class Excel2MarkdownUtilsTest {
         }
 
         assertTrue(target.exists());
-        String content = Files.readString(target.toPath(), StandardCharsets.UTF_8);
-        assertFalse(content.isBlank());
+        String content = readString(target.toPath(), StandardCharsets.UTF_8);
+        assertFalse(isBlank(content));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -333,8 +345,8 @@ class Excel2MarkdownUtilsTest {
         Excel2MarkdownUtils.csv2MarkdownFile(source, target);
 
         assertTrue(target.exists());
-        String content = Files.readString(target.toPath(), StandardCharsets.UTF_8);
-        assertFalse(content.isBlank());
+        String content = readString(target.toPath(), StandardCharsets.UTF_8);
+        assertFalse(isBlank(content));
         assertTrue(content.contains("姓名"));
     }
 
@@ -367,7 +379,7 @@ class Excel2MarkdownUtilsTest {
         }
 
         assertTrue(target.exists());
-        String content = Files.readString(target.toPath(), StandardCharsets.UTF_8);
+        String content = readString(target.toPath(), StandardCharsets.UTF_8);
         assertTrue(content.contains("|"));
     }
 
@@ -381,7 +393,7 @@ class Excel2MarkdownUtilsTest {
         InputStream is = new ByteArrayInputStream(csvContent.getBytes(StandardCharsets.UTF_8));
         String result = Excel2MarkdownUtils.csv2Markdown(is);
 
-        String[] lines = result.lines().filter(l -> !l.isBlank()).toArray(String[]::new);
+        String[] lines = lines(result).filter(l -> !isBlank(l)).toArray(String[]::new);
         // 第 1 行：表头
         assertTrue(lines[0].contains("Name") && lines[0].contains("Score"));
         // 第 2 行：分隔行（全是 ---）
@@ -398,7 +410,7 @@ class Excel2MarkdownUtilsTest {
         String result = Excel2MarkdownUtils.csv2Markdown(is);
 
         // 每一行的列数应一致（通过 | 的数量判断）
-        result.lines().filter(l -> l.startsWith("|")).forEach(line -> {
+        lines(result).filter(l -> l.startsWith("|")).forEach(line -> {
             long pipeCount = line.chars().filter(c -> c == '|').count();
             // 3 列 → 4 个 |
             assertEquals(4, pipeCount, "列数不一致: " + line);
@@ -443,7 +455,7 @@ class Excel2MarkdownUtilsTest {
         String result = Excel2MarkdownUtils.xls2Markdown(xls);
 
         assertNotNull(result);
-        assertFalse(result.isBlank());
+        assertFalse(isBlank(result));
         assertTrue(result.contains("|"));
         assertTrue(result.contains("---"));
         saveOutput(result, "sample1.xls.md");
@@ -467,7 +479,7 @@ class Excel2MarkdownUtilsTest {
             String result = Excel2MarkdownUtils.xls2Markdown(is);
 
             assertNotNull(result);
-            assertFalse(result.isBlank());
+            assertFalse(isBlank(result));
             assertTrue(result.contains("|"));
             assertTrue(result.contains("---"));
             saveOutput(result, "sample1-stream.xls.md");
@@ -521,8 +533,8 @@ class Excel2MarkdownUtilsTest {
         Excel2MarkdownUtils.xls2MarkdownFile(source, target);
 
         assertTrue(target.exists());
-        String content = Files.readString(target.toPath(), StandardCharsets.UTF_8);
-        assertFalse(content.isBlank());
+        String content = readString(target.toPath(), StandardCharsets.UTF_8);
+        assertFalse(isBlank(content));
         assertTrue(content.contains("|"));
         assertTrue(content.contains("---"));
     }
@@ -556,8 +568,8 @@ class Excel2MarkdownUtilsTest {
         }
 
         assertTrue(target.exists());
-        String content = Files.readString(target.toPath(), StandardCharsets.UTF_8);
-        assertFalse(content.isBlank());
+        String content = readString(target.toPath(), StandardCharsets.UTF_8);
+        assertFalse(isBlank(content));
     }
 
     // ─────────────────────────────────────────────────────────────────────────
@@ -570,7 +582,7 @@ class Excel2MarkdownUtilsTest {
         try (InputStream is = classpathStream("sample1.xls")) {
             String result = Excel2MarkdownUtils.xls2Markdown(is);
 
-            result.lines()
+            lines(result)
                     .filter(l -> l.startsWith("|") && l.contains("---"))
                     .forEach(sep -> assertTrue(sep.matches("\\|( --- \\|)+"),
                             "分隔行格式不正确: " + sep));
@@ -678,7 +690,7 @@ class Excel2MarkdownUtilsTest {
         Excel2MarkdownUtils.xlsx2MarkdownFile(source, target);
 
         assertTrue(target.exists());
-        String content = Files.readString(target.toPath(), StandardCharsets.UTF_8);
+        String content = readString(target.toPath(), StandardCharsets.UTF_8);
         assertTrue(content.contains("基础运费矩阵"), "写出文件中文内容不应乱码");
         assertTrue(content.contains("Zone 2"),      "写出文件英文内容应存在");
     }
