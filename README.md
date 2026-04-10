@@ -53,6 +53,18 @@ flowchart LR
 </dependency>
 ```
 
+如果你的项目仍在使用 **JDK 8**，请引入兼容分支的坐标：
+
+```xml
+<dependency>
+    <groupId>cn.creekmoon</groupId>
+    <artifactId>excel-to-markdown-jdk8</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+> 说明：`excel-to-markdown-jdk8` 与主分支功能完全一致，仅将语法降级到 JDK 8 兼容范围。
+
 ### 2. 最短示例
 
 ```java
@@ -220,7 +232,8 @@ try (InputStream inputStream = Files.newInputStream(Path.of("report.xlsx"))) {
 
 ### 环境要求
 
-- JDK `17+`
+- **主分支**：JDK `17+`
+- **JDK 8 兼容分支**：使用 `excel-to-markdown-jdk8`，无需升级 JDK
 - Maven `3.9+`
 
 ### 运行测试

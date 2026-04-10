@@ -57,6 +57,18 @@ flowchart LR
 </dependency>
 ```
 
+If your project still runs on **JDK 8**, use the compatibility artifact:
+
+```xml
+<dependency>
+    <groupId>cn.creekmoon</groupId>
+    <artifactId>excel-to-markdown-jdk8</artifactId>
+    <version>1.0.0</version>
+</dependency>
+```
+
+> Note: `excel-to-markdown-jdk8` provides the same features as the main branch, with syntax downgraded for JDK 8 compatibility.
+
 ## Quick Start
 
 ```java
@@ -219,7 +231,8 @@ Notes:
 
 ### Requirements
 
-- JDK `17+`
+- **Main branch**: JDK `17+`
+- **JDK 8 compatibility branch**: use `excel-to-markdown-jdk8` without upgrading your JDK
 - Maven `3.9+`
 
 ### Run Tests
