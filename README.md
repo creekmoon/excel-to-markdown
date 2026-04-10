@@ -49,7 +49,7 @@ flowchart LR
 <dependency>
     <groupId>cn.creekmoon</groupId>
     <artifactId>excel-to-markdown</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
@@ -59,7 +59,7 @@ flowchart LR
 <dependency>
     <groupId>cn.creekmoon</groupId>
     <artifactId>excel-to-markdown-jdk8</artifactId>
-    <version>1.0.0</version>
+    <version>1.1.0</version>
 </dependency>
 ```
 
