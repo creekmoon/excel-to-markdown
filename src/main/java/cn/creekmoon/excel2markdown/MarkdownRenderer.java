@@ -1,6 +1,7 @@
 package cn.creekmoon.excel2markdown;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -32,7 +33,7 @@ class MarkdownRenderer {
 
     /** 追加一行数据。 */
     void addRow(List<String> cells) {
-        currentSheetRows.add(cells == null ? List.of() : new ArrayList<>(cells));
+        currentSheetRows.add(cells == null ? Collections.emptyList() : new ArrayList<>(cells));
     }
 
     /** 将所有缓冲数据渲染为最终 Markdown 字符串并返回。 */
@@ -72,7 +73,7 @@ class MarkdownRenderer {
     private void flushSheetWysiwyg(int columnCount) {
         /* 首行作表头，后续行作数据 */
         List<String> header = currentSheetRows.isEmpty()
-                ? List.of()
+                ? Collections.emptyList()
                 : padRow(currentSheetRows.get(0), columnCount);
         buffer.append(buildRow(header)).append("\n");
         buffer.append(buildSeparatorRow(columnCount)).append("\n");
