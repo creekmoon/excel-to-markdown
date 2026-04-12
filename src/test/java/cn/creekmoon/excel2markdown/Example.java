@@ -8,11 +8,12 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Locale;
 
 public class Example {
 
     public static void main(String[] args) {
-        String sourceFileName = "收集卡派价模板.xlsx";
+        String sourceFileName = "报价2.xlsx";
         try {
             URL url = Example.class.getClassLoader().getResource(sourceFileName);
             if (url == null) {
@@ -22,10 +23,19 @@ public class Example {
 
             Path targetDir = Paths.get("target");
             Files.createDirectories(targetDir);
-            String mdName = sourceFileName.replaceFirst("(?i)\\.xlsx", ".md");
+            String mdName = sourceFileName.replaceFirst("(?i)\\.(xlsx|xls|csv)$", ".md");
             File target = targetDir.resolve(mdName).toFile();
 
-            Excel2MarkdownUtils.xlsx2MarkdownFile(source, target);
+            String lower = sourceFileName.toLowerCase(Locale.ROOT);
+            if (lower.endsWith(".xlsx")) {
+                Excel2MarkdownUtils.xlsx2MarkdownFile(source, target);
+            } else if (lower.endsWith(".xls")) {
+                Excel2MarkdownUtils.xls2MarkdownFile(source, target);
+            } else if (lower.endsWith(".csv")) {
+                Excel2MarkdownUtils.csv2MarkdownFile(source, target);
+            } else {
+                throw new IllegalArgumentException("不支持的文件类型，仅支持 .xlsx、.xls、.csv: " + sourceFileName);
+            }
             System.out.println("已生成 Markdown: " + target.getAbsolutePath());
         } catch (Excel2MarkdownException e) {
             System.err.println("转换失败: " + e.getMessage());

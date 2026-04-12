@@ -53,7 +53,7 @@ flowchart LR
 <dependency>
     <groupId>cn.creekmoon</groupId>
     <artifactId>excel-to-markdown</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -63,7 +63,7 @@ If your project still runs on **JDK 8**, use the compatibility artifact:
 <dependency>
     <groupId>cn.creekmoon</groupId>
     <artifactId>excel-to-markdown-jdk8</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -148,24 +148,74 @@ try (InputStream inputStream = Files.newInputStream(Path.of("report.xlsx"))) {
 
 ## API Overview
 
+All methods have overloaded variants accepting a `MarkdownOutputStrategy` parameter. When omitted, `WYSIWYG` is used by default.
+
 | Method | Description |
 | --- | --- |
-| `xlsx2Markdown(File)` | `xlsx -> String` |
-| `xlsx2Markdown(InputStream)` | `xlsx -> String` |
-| `xlsx2MarkdownFile(File, File)` | `xlsx -> Markdown file` |
-| `xlsx2MarkdownFile(InputStream, File)` | `xlsx -> Markdown file` |
-| `xls2Markdown(File)` | `xls -> String` |
-| `xls2Markdown(InputStream)` | `xls -> String` |
-| `xls2MarkdownFile(File, File)` | `xls -> Markdown file` |
-| `xls2MarkdownFile(InputStream, File)` | `xls -> Markdown file` |
-| `csv2Markdown(File)` | `csv -> String` |
-| `csv2Markdown(InputStream)` | `csv -> String` |
-| `csv2MarkdownFile(File, File)` | `csv -> Markdown file` |
-| `csv2MarkdownFile(InputStream, File)` | `csv -> Markdown file` |
+| `xlsx2Markdown(File)` | `xlsx -> String`, WYSIWYG strategy |
+| `xlsx2Markdown(File, MarkdownOutputStrategy)` | `xlsx -> String`, chosen strategy |
+| `xlsx2Markdown(InputStream)` | `xlsx -> String`, WYSIWYG strategy |
+| `xlsx2Markdown(InputStream, MarkdownOutputStrategy)` | `xlsx -> String`, chosen strategy |
+| `xlsx2MarkdownFile(File, File)` | `xlsx -> Markdown file`, WYSIWYG strategy |
+| `xlsx2MarkdownFile(File, File, MarkdownOutputStrategy)` | `xlsx -> Markdown file`, chosen strategy |
+| `xlsx2MarkdownFile(InputStream, File)` | `xlsx -> Markdown file`, WYSIWYG strategy |
+| `xlsx2MarkdownFile(InputStream, File, MarkdownOutputStrategy)` | `xlsx -> Markdown file`, chosen strategy |
+| `xls2Markdown(File)` | `xls -> String`, WYSIWYG strategy |
+| `xls2Markdown(File, MarkdownOutputStrategy)` | `xls -> String`, chosen strategy |
+| `xls2Markdown(InputStream)` | `xls -> String`, WYSIWYG strategy |
+| `xls2Markdown(InputStream, MarkdownOutputStrategy)` | `xls -> String`, chosen strategy |
+| `xls2MarkdownFile(File, File)` | `xls -> Markdown file`, WYSIWYG strategy |
+| `xls2MarkdownFile(File, File, MarkdownOutputStrategy)` | `xls -> Markdown file`, chosen strategy |
+| `xls2MarkdownFile(InputStream, File)` | `xls -> Markdown file`, WYSIWYG strategy |
+| `xls2MarkdownFile(InputStream, File, MarkdownOutputStrategy)` | `xls -> Markdown file`, chosen strategy |
+| `csv2Markdown(File)` | `csv -> String`, WYSIWYG strategy |
+| `csv2Markdown(File, MarkdownOutputStrategy)` | `csv -> String`, chosen strategy |
+| `csv2Markdown(InputStream)` | `csv -> String`, WYSIWYG strategy |
+| `csv2Markdown(InputStream, MarkdownOutputStrategy)` | `csv -> String`, chosen strategy |
+| `csv2MarkdownFile(File, File)` | `csv -> Markdown file`, WYSIWYG strategy |
+| `csv2MarkdownFile(File, File, MarkdownOutputStrategy)` | `csv -> Markdown file`, chosen strategy |
+| `csv2MarkdownFile(InputStream, File)` | `csv -> Markdown file`, WYSIWYG strategy |
+| `csv2MarkdownFile(InputStream, File, MarkdownOutputStrategy)` | `csv -> Markdown file`, chosen strategy |
+
+## Output Strategies
+
+All conversion methods accept a `MarkdownOutputStrategy` to control how the table is rendered.
+
+### WYSIWYG (default)
+
+No row numbers or column letters are added. The first row of data becomes the Markdown table header, preserving the visual appearance of the spreadsheet.
+
+```java
+// equivalent to passing MarkdownOutputStrategy.WYSIWYG explicitly
+String markdown = Excel2MarkdownUtils.xlsx2Markdown(new File("report.xlsx"));
+```
+
+### NATIVE_COORDINATES
+
+Annotates every table with a short note, uses Excel column letters (`A`, `B`, `C` …) as the header row, and prepends a 1-based row number to each data row. The top-left cell is labelled `Rows`.
+
+```java
+String markdown = Excel2MarkdownUtils.xlsx2Markdown(
+        new File("report.xlsx"),
+        MarkdownOutputStrategy.NATIVE_COORDINATES
+);
+```
+
+Sample output:
+
+```md
+> Note: Column headers use Excel column letters (A, B, C ...). Row numbers reflect the native row index starting from 1.
+
+| Rows | A | B | C |
+| --- | --- | --- | --- |
+| 1 | name | age | city |
+| 2 | Alice | 28 | Beijing |
+| 3 | Bob | 32 | Shanghai |
+```
 
 ## Output Behavior
 
-Each sheet is rendered as a single complete Markdown table. Every row in the sheet becomes a table row — no content is split into separate text blocks.
+Each sheet is rendered as a single complete Markdown table. Every row in the sheet becomes a table row.
 
 ### Multi-sheet workbooks are expanded in order
 
@@ -174,22 +224,12 @@ Each sheet is prefixed with a level-1 heading, followed by one table:
 ```md
 # Sheet1
 
-| A | B | C |
-| --- | --- | --- |
-| ... | ... | ... |
+| ... |
 
 # Sheet2
 
-| A | B | C |
-| --- | --- | --- |
-| ... | ... | ... |
+| ... |
 ```
-
-### Table header uses Excel column letters
-
-The first row of the Markdown table is always the column-letter header (`A`, `B`, `C`, …, `Z`, `AA`, `AB`, …). Every row from the original sheet becomes a data row. Column coordinates match the original Excel layout, so `A` in the Markdown table is always column A in the spreadsheet.
-
-### Empty rows are preserved
 
 Blank rows in the sheet appear as empty rows in the table so that row positions stay aligned with the original spreadsheet.
 

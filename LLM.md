@@ -14,7 +14,7 @@
 <dependency>
     <groupId>cn.creekmoon</groupId>
     <artifactId>excel-to-markdown</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -31,36 +31,53 @@ import cn.creekmoon.excel2markdown.Excel2MarkdownUtils;
 
 ## 4. API Reference
 
+All methods have overloaded variants accepting `MarkdownOutputStrategy`. When omitted, `WYSIWYG` is used.
+
 ### String output (in-memory)
 
 | Method | Input | Output |
 |--------|-------|--------|
-| `Excel2MarkdownUtils.xlsx2Markdown(File file)` | `.xlsx` file | `String` (Markdown) |
-| `Excel2MarkdownUtils.xlsx2Markdown(InputStream inputStream)` | `.xlsx` stream | `String` (Markdown) |
-| `Excel2MarkdownUtils.xls2Markdown(File file)` | `.xls` file | `String` (Markdown) |
-| `Excel2MarkdownUtils.xls2Markdown(InputStream inputStream)` | `.xls` stream | `String` (Markdown) |
-| `Excel2MarkdownUtils.csv2Markdown(File file)` | `.csv` file | `String` (Markdown) |
-| `Excel2MarkdownUtils.csv2Markdown(InputStream inputStream)` | `.csv` stream | `String` (Markdown) |
+| `Excel2MarkdownUtils.xlsx2Markdown(File file)` | `.xlsx` file | `String` (Markdown, WYSIWYG) |
+| `Excel2MarkdownUtils.xlsx2Markdown(File file, MarkdownOutputStrategy strategy)` | `.xlsx` file | `String` (Markdown, chosen strategy) |
+| `Excel2MarkdownUtils.xlsx2Markdown(InputStream inputStream)` | `.xlsx` stream | `String` (Markdown, WYSIWYG) |
+| `Excel2MarkdownUtils.xlsx2Markdown(InputStream inputStream, MarkdownOutputStrategy strategy)` | `.xlsx` stream | `String` (Markdown, chosen strategy) |
+| `Excel2MarkdownUtils.xls2Markdown(File file)` | `.xls` file | `String` (Markdown, WYSIWYG) |
+| `Excel2MarkdownUtils.xls2Markdown(File file, MarkdownOutputStrategy strategy)` | `.xls` file | `String` (Markdown, chosen strategy) |
+| `Excel2MarkdownUtils.xls2Markdown(InputStream inputStream)` | `.xls` stream | `String` (Markdown, WYSIWYG) |
+| `Excel2MarkdownUtils.xls2Markdown(InputStream inputStream, MarkdownOutputStrategy strategy)` | `.xls` stream | `String` (Markdown, chosen strategy) |
+| `Excel2MarkdownUtils.csv2Markdown(File file)` | `.csv` file | `String` (Markdown, WYSIWYG) |
+| `Excel2MarkdownUtils.csv2Markdown(File file, MarkdownOutputStrategy strategy)` | `.csv` file | `String` (Markdown, chosen strategy) |
+| `Excel2MarkdownUtils.csv2Markdown(InputStream inputStream)` | `.csv` stream | `String` (Markdown, WYSIWYG) |
+| `Excel2MarkdownUtils.csv2Markdown(InputStream inputStream, MarkdownOutputStrategy strategy)` | `.csv` stream | `String` (Markdown, chosen strategy) |
 
 ### File output (writes UTF-8 `.md` file)
 
 | Method | Behavior |
 |--------|----------|
-| `xlsx2MarkdownFile(File source, File target)` | Converts `source` and writes to `target` |
-| `xlsx2MarkdownFile(InputStream source, File target)` | Converts `source` stream and writes to `target` |
-| `xls2MarkdownFile(File source, File target)` | Same for `.xls` |
-| `xls2MarkdownFile(InputStream source, File target)` | Same for `.xls` stream |
-| `csv2MarkdownFile(File source, File target)` | Same for `.csv` |
-| `csv2MarkdownFile(InputStream source, File target)` | Same for `.csv` stream |
+| `xlsx2MarkdownFile(File source, File target)` | Converts `source` and writes to `target` (WYSIWYG) |
+| `xlsx2MarkdownFile(File source, File target, MarkdownOutputStrategy strategy)` | Converts `source` and writes to `target` (chosen strategy) |
+| `xlsx2MarkdownFile(InputStream source, File target)` | Same for stream input (WYSIWYG) |
+| `xlsx2MarkdownFile(InputStream source, File target, MarkdownOutputStrategy strategy)` | Same for stream input (chosen strategy) |
+| `xls2MarkdownFile(...)` | Same variants for `.xls` |
+| `csv2MarkdownFile(...)` | Same variants for `.csv` |
 
 All file-output methods auto-create parent directories if missing.
 
 ## 5. Common Usage Patterns
 
-### Basic one-liner
+### Basic one-liner (WYSIWYG, default)
 
 ```java
 String md = Excel2MarkdownUtils.xlsx2Markdown(new File("report.xlsx"));
+```
+
+### With native coordinates
+
+```java
+String md = Excel2MarkdownUtils.xlsx2Markdown(
+    new File("report.xlsx"),
+    MarkdownOutputStrategy.NATIVE_COORDINATES
+);
 ```
 
 ### Write to file
@@ -88,15 +105,38 @@ String md = Excel2MarkdownUtils.csv2Markdown(new File("table.csv"));
 
 ## 6. Output Semantics
 
+Two strategies control how the Markdown table is rendered. Choose based on your use case.
+
+### Strategy: WYSIWYG (default)
+
+The first row of data becomes the Markdown table header. No column letters or row numbers are added. Use this when you want the output to look like the original spreadsheet.
+
 Knowing these rules lets you predict the Markdown shape exactly:
 
-1. **Whole-sheet single table** — Every sheet produces exactly one Markdown table. No rows are split into separate text blocks, regardless of content.
-2. **Column-letter header** — The header row is always the Excel column letters (`A`, `B`, `C`, ..., `Z`, `AA`, `AB`, ...). The first data row in the Markdown table corresponds to row 1 of the sheet, not a detected header.
-3. **Original column positions preserved** — Leading blank columns are not stripped. Column `A` in the Markdown table is always column A in the original spreadsheet.
-4. **Empty rows preserved** — Blank rows appear as empty table rows, keeping row-number alignment with the source.
+1. **Whole-sheet single table** — Every sheet produces exactly one Markdown table.
+2. **First data row is the header** — The first row of data becomes the Markdown table header row. No synthetic column-letter header is added.
+3. **Original column positions preserved** — Leading blank columns are not stripped.
+4. **Empty rows preserved** — Blank rows appear as empty table rows.
 5. **Newlines in cells** — Converted to `<br>` so Markdown table syntax stays valid.
 6. **Pipe characters (`|`) in cells** — Escaped automatically so they do not break table structure.
 7. **Encoding** — Output is always UTF-8.
+
+### Strategy: NATIVE_COORDINATES
+
+Each table is prefixed with a one-line English note. The header row uses Excel column letters (`A`, `B`, `C`, …). Every data row is prefixed with a 1-based row number. The top-left cell is `Rows`.
+
+Example output shape:
+
+```md
+> Note: Column headers use Excel column letters (A, B, C ...). Row numbers reflect the native row index starting from 1.
+
+| Rows | A | B | C |
+| --- | --- | --- | --- |
+| 1 | header1 | header2 | header3 |
+| 2 | value1  | value2  | value3  |
+```
+
+Use this when callers need to reference cells by their original spreadsheet coordinates, or when feeding the table to an LLM that should be able to locate specific cells.
 
 ## 7. Exception Model
 
@@ -111,11 +151,11 @@ Typical causes:
 - File does not exist
 - IO failure while reading or writing
 
-## 8. Internal Configuration (Non-Public API)
+## 8. Public Configuration
 
-`ConvertConfig` exists internally but is **not exposed** through `Excel2MarkdownUtils`. As of v1.0.0, consumers cannot tweak rendering parameters without forking or using the lower-level parser classes (`XlsxSaxParser`, `XlsParser`, `CsvLineParser`, `MarkdownRenderer`).
+`ConvertConfig` exists internally but is **not exposed** through `Excel2MarkdownUtils`. Sheet filters, encoding, and formula evaluation are not available through the public utility surface.
 
-If you see a request to configure sheet filters, encoding, or formula evaluation, be aware that these are not available through the public utility surface.
+`MarkdownOutputStrategy` is a **public enum** that controls table rendering. Pass it as the last argument to any conversion method to switch between `WYSIWYG` (default) and `NATIVE_COORDINATES`.
 
 ## 9. What It Does / Does Not Do
 

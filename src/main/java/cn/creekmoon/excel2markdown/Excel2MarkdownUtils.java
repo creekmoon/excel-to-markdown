@@ -6,6 +6,12 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * Excel / CSV 转 Markdown 的工具类入口，所有方法均为静态方法。
+ *
+ * <p>默认使用 {@link MarkdownOutputStrategy#WYSIWYG} 策略（所见即所得），
+ * 如需输出原生坐标（列字母 + 行号），可调用带 {@link MarkdownOutputStrategy} 参数的重载方法。
+ */
 public class Excel2MarkdownUtils {
 
     private Excel2MarkdownUtils() {
@@ -13,7 +19,17 @@ public class Excel2MarkdownUtils {
 
     /* ── xlsx → String ─────────────────────────────────────────────── */
 
+    /**
+     * 将 xlsx 文件转为 Markdown 字符串，使用所见即所得策略输出。
+     */
     public static String xlsx2Markdown(File file) throws Excel2MarkdownException {
+        return xlsx2Markdown(file, MarkdownOutputStrategy.WYSIWYG);
+    }
+
+    /**
+     * 将 xlsx 文件按指定策略转为 Markdown 字符串。
+     */
+    public static String xlsx2Markdown(File file, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
         /* fast-fail */
         if (file == null) {
             throw new Excel2MarkdownException("file 不能为 null");
@@ -23,20 +39,30 @@ public class Excel2MarkdownUtils {
         }
 
         try (InputStream is = new FileInputStream(file)) {
-            return xlsx2Markdown(is);
+            return xlsx2Markdown(is, strategy);
         } catch (IOException e) {
             throw new Excel2MarkdownException("打开文件失败: " + file.getAbsolutePath(), e);
         }
     }
 
+    /**
+     * 将 xlsx 输入流转为 Markdown 字符串，使用所见即所得策略输出。
+     */
     public static String xlsx2Markdown(InputStream inputStream) throws Excel2MarkdownException {
+        return xlsx2Markdown(inputStream, MarkdownOutputStrategy.WYSIWYG);
+    }
+
+    /**
+     * 将 xlsx 输入流按指定策略转为 Markdown 字符串。
+     */
+    public static String xlsx2Markdown(InputStream inputStream, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
         /* fast-fail */
         if (inputStream == null) {
             throw new Excel2MarkdownException("inputStream 不能为 null");
         }
 
         /* 解析并渲染 */
-        MarkdownRenderer renderer = new MarkdownRenderer();
+        MarkdownRenderer renderer = new MarkdownRenderer(strategy);
         ConvertConfig config = ConvertConfig.defaults();
         XlsxSaxParser parser = new XlsxSaxParser();
         parser.parse(inputStream, config, (sheetName, rows) -> {
@@ -50,7 +76,18 @@ public class Excel2MarkdownUtils {
 
     /* ── xls → String ──────────────────────────────────────────────── */
 
+    /**
+     * 将 xls 文件转为 Markdown 字符串，使用所见即所得策略输出。
+     */
     public static String xls2Markdown(File file) throws Excel2MarkdownException {
+        return xls2Markdown(file, MarkdownOutputStrategy.WYSIWYG);
+    }
+
+    /**
+     * 将 xls 文件按指定策略转为 Markdown 字符串。
+     */
+    public static String xls2Markdown(File file, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
+        /* fast-fail */
         if (file == null) {
             throw new Excel2MarkdownException("file 不能为 null");
         }
@@ -59,18 +96,30 @@ public class Excel2MarkdownUtils {
         }
 
         try (InputStream is = new FileInputStream(file)) {
-            return xls2Markdown(is);
+            return xls2Markdown(is, strategy);
         } catch (IOException e) {
             throw new Excel2MarkdownException("打开文件失败: " + file.getAbsolutePath(), e);
         }
     }
 
+    /**
+     * 将 xls 输入流转为 Markdown 字符串，使用所见即所得策略输出。
+     */
     public static String xls2Markdown(InputStream inputStream) throws Excel2MarkdownException {
+        return xls2Markdown(inputStream, MarkdownOutputStrategy.WYSIWYG);
+    }
+
+    /**
+     * 将 xls 输入流按指定策略转为 Markdown 字符串。
+     */
+    public static String xls2Markdown(InputStream inputStream, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
+        /* fast-fail */
         if (inputStream == null) {
             throw new Excel2MarkdownException("inputStream 不能为 null");
         }
 
-        MarkdownRenderer renderer = new MarkdownRenderer();
+        /* 解析并渲染 */
+        MarkdownRenderer renderer = new MarkdownRenderer(strategy);
         ConvertConfig config = ConvertConfig.defaults();
         XlsParser parser = new XlsParser();
         parser.parse(inputStream, config, (sheetName, rows) -> {
@@ -84,19 +133,18 @@ public class Excel2MarkdownUtils {
 
     /* ── xls → File ────────────────────────────────────────────────── */
 
+    /**
+     * 将 xls 文件转为 Markdown 并写出到目标文件，使用所见即所得策略输出。
+     */
     public static void xls2MarkdownFile(File source, File target) throws Excel2MarkdownException {
-        if (source == null) {
-            throw new Excel2MarkdownException("source 不能为 null");
-        }
-        if (target == null) {
-            throw new Excel2MarkdownException("target 不能为 null");
-        }
-
-        String markdown = xls2Markdown(source);
-        writeToFile(markdown, target);
+        xls2MarkdownFile(source, target, MarkdownOutputStrategy.WYSIWYG);
     }
 
-    public static void xls2MarkdownFile(InputStream source, File target) throws Excel2MarkdownException {
+    /**
+     * 将 xls 文件按指定策略转为 Markdown 并写出到目标文件。
+     */
+    public static void xls2MarkdownFile(File source, File target, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
+        /* fast-fail */
         if (source == null) {
             throw new Excel2MarkdownException("source 不能为 null");
         }
@@ -104,13 +152,44 @@ public class Excel2MarkdownUtils {
             throw new Excel2MarkdownException("target 不能为 null");
         }
 
-        String markdown = xls2Markdown(source);
-        writeToFile(markdown, target);
+        writeToFile(xls2Markdown(source, strategy), target);
+    }
+
+    /**
+     * 将 xls 输入流转为 Markdown 并写出到目标文件，使用所见即所得策略输出。
+     */
+    public static void xls2MarkdownFile(InputStream source, File target) throws Excel2MarkdownException {
+        xls2MarkdownFile(source, target, MarkdownOutputStrategy.WYSIWYG);
+    }
+
+    /**
+     * 将 xls 输入流按指定策略转为 Markdown 并写出到目标文件。
+     */
+    public static void xls2MarkdownFile(InputStream source, File target, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
+        /* fast-fail */
+        if (source == null) {
+            throw new Excel2MarkdownException("source 不能为 null");
+        }
+        if (target == null) {
+            throw new Excel2MarkdownException("target 不能为 null");
+        }
+
+        writeToFile(xls2Markdown(source, strategy), target);
     }
 
     /* ── csv → String ──────────────────────────────────────────────── */
 
+    /**
+     * 将 csv 文件转为 Markdown 字符串，使用所见即所得策略输出。
+     */
     public static String csv2Markdown(File file) throws Excel2MarkdownException {
+        return csv2Markdown(file, MarkdownOutputStrategy.WYSIWYG);
+    }
+
+    /**
+     * 将 csv 文件按指定策略转为 Markdown 字符串。
+     */
+    public static String csv2Markdown(File file, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
         /* fast-fail */
         if (file == null) {
             throw new Excel2MarkdownException("file 不能为 null");
@@ -120,20 +199,30 @@ public class Excel2MarkdownUtils {
         }
 
         try (InputStream is = new FileInputStream(file)) {
-            return csv2Markdown(is);
+            return csv2Markdown(is, strategy);
         } catch (IOException e) {
             throw new Excel2MarkdownException("打开文件失败: " + file.getAbsolutePath(), e);
         }
     }
 
+    /**
+     * 将 csv 输入流转为 Markdown 字符串，使用所见即所得策略输出。
+     */
     public static String csv2Markdown(InputStream inputStream) throws Excel2MarkdownException {
+        return csv2Markdown(inputStream, MarkdownOutputStrategy.WYSIWYG);
+    }
+
+    /**
+     * 将 csv 输入流按指定策略转为 Markdown 字符串。
+     */
+    public static String csv2Markdown(InputStream inputStream, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
         /* fast-fail */
         if (inputStream == null) {
             throw new Excel2MarkdownException("inputStream 不能为 null");
         }
 
         /* 解析并渲染 */
-        MarkdownRenderer renderer = new MarkdownRenderer();
+        MarkdownRenderer renderer = new MarkdownRenderer(strategy);
         ConvertConfig config = ConvertConfig.defaults();
         CsvLineParser parser = new CsvLineParser();
         parser.parse(inputStream, config.encoding, renderer::addRow);
@@ -142,20 +231,17 @@ public class Excel2MarkdownUtils {
 
     /* ── xlsx → File ───────────────────────────────────────────────── */
 
+    /**
+     * 将 xlsx 文件转为 Markdown 并写出到目标文件，使用所见即所得策略输出。
+     */
     public static void xlsx2MarkdownFile(File source, File target) throws Excel2MarkdownException {
-        /* fast-fail */
-        if (source == null) {
-            throw new Excel2MarkdownException("source 不能为 null");
-        }
-        if (target == null) {
-            throw new Excel2MarkdownException("target 不能为 null");
-        }
-
-        String markdown = xlsx2Markdown(source);
-        writeToFile(markdown, target);
+        xlsx2MarkdownFile(source, target, MarkdownOutputStrategy.WYSIWYG);
     }
 
-    public static void xlsx2MarkdownFile(InputStream source, File target) throws Excel2MarkdownException {
+    /**
+     * 将 xlsx 文件按指定策略转为 Markdown 并写出到目标文件。
+     */
+    public static void xlsx2MarkdownFile(File source, File target, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
         /* fast-fail */
         if (source == null) {
             throw new Excel2MarkdownException("source 不能为 null");
@@ -164,26 +250,44 @@ public class Excel2MarkdownUtils {
             throw new Excel2MarkdownException("target 不能为 null");
         }
 
-        String markdown = xlsx2Markdown(source);
-        writeToFile(markdown, target);
+        writeToFile(xlsx2Markdown(source, strategy), target);
+    }
+
+    /**
+     * 将 xlsx 输入流转为 Markdown 并写出到目标文件，使用所见即所得策略输出。
+     */
+    public static void xlsx2MarkdownFile(InputStream source, File target) throws Excel2MarkdownException {
+        xlsx2MarkdownFile(source, target, MarkdownOutputStrategy.WYSIWYG);
+    }
+
+    /**
+     * 将 xlsx 输入流按指定策略转为 Markdown 并写出到目标文件。
+     */
+    public static void xlsx2MarkdownFile(InputStream source, File target, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
+        /* fast-fail */
+        if (source == null) {
+            throw new Excel2MarkdownException("source 不能为 null");
+        }
+        if (target == null) {
+            throw new Excel2MarkdownException("target 不能为 null");
+        }
+
+        writeToFile(xlsx2Markdown(source, strategy), target);
     }
 
     /* ── csv → File ────────────────────────────────────────────────── */
 
+    /**
+     * 将 csv 文件转为 Markdown 并写出到目标文件，使用所见即所得策略输出。
+     */
     public static void csv2MarkdownFile(File source, File target) throws Excel2MarkdownException {
-        /* fast-fail */
-        if (source == null) {
-            throw new Excel2MarkdownException("source 不能为 null");
-        }
-        if (target == null) {
-            throw new Excel2MarkdownException("target 不能为 null");
-        }
-
-        String markdown = csv2Markdown(source);
-        writeToFile(markdown, target);
+        csv2MarkdownFile(source, target, MarkdownOutputStrategy.WYSIWYG);
     }
 
-    public static void csv2MarkdownFile(InputStream source, File target) throws Excel2MarkdownException {
+    /**
+     * 将 csv 文件按指定策略转为 Markdown 并写出到目标文件。
+     */
+    public static void csv2MarkdownFile(File source, File target, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
         /* fast-fail */
         if (source == null) {
             throw new Excel2MarkdownException("source 不能为 null");
@@ -192,8 +296,29 @@ public class Excel2MarkdownUtils {
             throw new Excel2MarkdownException("target 不能为 null");
         }
 
-        String markdown = csv2Markdown(source);
-        writeToFile(markdown, target);
+        writeToFile(csv2Markdown(source, strategy), target);
+    }
+
+    /**
+     * 将 csv 输入流转为 Markdown 并写出到目标文件，使用所见即所得策略输出。
+     */
+    public static void csv2MarkdownFile(InputStream source, File target) throws Excel2MarkdownException {
+        csv2MarkdownFile(source, target, MarkdownOutputStrategy.WYSIWYG);
+    }
+
+    /**
+     * 将 csv 输入流按指定策略转为 Markdown 并写出到目标文件。
+     */
+    public static void csv2MarkdownFile(InputStream source, File target, MarkdownOutputStrategy strategy) throws Excel2MarkdownException {
+        /* fast-fail */
+        if (source == null) {
+            throw new Excel2MarkdownException("source 不能为 null");
+        }
+        if (target == null) {
+            throw new Excel2MarkdownException("target 不能为 null");
+        }
+
+        writeToFile(csv2Markdown(source, strategy), target);
     }
 
     /* ── 输出层：写出到文件 ─────────────────────────────────────────── */

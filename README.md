@@ -1,4 +1,4 @@
-# excel-to-markdown
+﻿# excel-to-markdown
 
 [简体中文](README.md) | [English](README.en.md) | [🤖 LLM 用法参考](LLM.md)
 
@@ -49,7 +49,7 @@ flowchart LR
 <dependency>
     <groupId>cn.creekmoon</groupId>
     <artifactId>excel-to-markdown</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -59,7 +59,7 @@ flowchart LR
 <dependency>
     <groupId>cn.creekmoon</groupId>
     <artifactId>excel-to-markdown-jdk8</artifactId>
-    <version>1.1.0</version>
+    <version>1.2.0</version>
 </dependency>
 ```
 
@@ -152,24 +152,74 @@ try (InputStream inputStream = Files.newInputStream(Path.of("report.xlsx"))) {
 
 ## API 一览
 
+所有方法均有带 `MarkdownOutputStrategy` 参数的重载版本，省略时默认使用 `WYSIWYG`（所见即所得）。
+
 | 方法 | 说明 |
 | --- | --- |
-| `xlsx2Markdown(File)` | `xlsx -> String` |
-| `xlsx2Markdown(InputStream)` | `xlsx -> String` |
-| `xlsx2MarkdownFile(File, File)` | `xlsx -> Markdown 文件` |
-| `xlsx2MarkdownFile(InputStream, File)` | `xlsx -> Markdown 文件` |
-| `xls2Markdown(File)` | `xls -> String` |
-| `xls2Markdown(InputStream)` | `xls -> String` |
-| `xls2MarkdownFile(File, File)` | `xls -> Markdown 文件` |
-| `xls2MarkdownFile(InputStream, File)` | `xls -> Markdown 文件` |
-| `csv2Markdown(File)` | `csv -> String` |
-| `csv2Markdown(InputStream)` | `csv -> String` |
-| `csv2MarkdownFile(File, File)` | `csv -> Markdown 文件` |
-| `csv2MarkdownFile(InputStream, File)` | `csv -> Markdown 文件` |
+| `xlsx2Markdown(File)` | `xlsx -> String`，WYSIWYG 策略 |
+| `xlsx2Markdown(File, MarkdownOutputStrategy)` | `xlsx -> String`，指定策略 |
+| `xlsx2Markdown(InputStream)` | `xlsx -> String`，WYSIWYG 策略 |
+| `xlsx2Markdown(InputStream, MarkdownOutputStrategy)` | `xlsx -> String`，指定策略 |
+| `xlsx2MarkdownFile(File, File)` | `xlsx -> Markdown 文件`，WYSIWYG 策略 |
+| `xlsx2MarkdownFile(File, File, MarkdownOutputStrategy)` | `xlsx -> Markdown 文件`，指定策略 |
+| `xlsx2MarkdownFile(InputStream, File)` | `xlsx -> Markdown 文件`，WYSIWYG 策略 |
+| `xlsx2MarkdownFile(InputStream, File, MarkdownOutputStrategy)` | `xlsx -> Markdown 文件`，指定策略 |
+| `xls2Markdown(File)` | `xls -> String`，WYSIWYG 策略 |
+| `xls2Markdown(File, MarkdownOutputStrategy)` | `xls -> String`，指定策略 |
+| `xls2Markdown(InputStream)` | `xls -> String`，WYSIWYG 策略 |
+| `xls2Markdown(InputStream, MarkdownOutputStrategy)` | `xls -> String`，指定策略 |
+| `xls2MarkdownFile(File, File)` | `xls -> Markdown 文件`，WYSIWYG 策略 |
+| `xls2MarkdownFile(File, File, MarkdownOutputStrategy)` | `xls -> Markdown 文件`，指定策略 |
+| `xls2MarkdownFile(InputStream, File)` | `xls -> Markdown 文件`，WYSIWYG 策略 |
+| `xls2MarkdownFile(InputStream, File, MarkdownOutputStrategy)` | `xls -> Markdown 文件`，指定策略 |
+| `csv2Markdown(File)` | `csv -> String`，WYSIWYG 策略 |
+| `csv2Markdown(File, MarkdownOutputStrategy)` | `csv -> String`，指定策略 |
+| `csv2Markdown(InputStream)` | `csv -> String`，WYSIWYG 策略 |
+| `csv2Markdown(InputStream, MarkdownOutputStrategy)` | `csv -> String`，指定策略 |
+| `csv2MarkdownFile(File, File)` | `csv -> Markdown 文件`，WYSIWYG 策略 |
+| `csv2MarkdownFile(File, File, MarkdownOutputStrategy)` | `csv -> Markdown 文件`，指定策略 |
+| `csv2MarkdownFile(InputStream, File)` | `csv -> Markdown 文件`，WYSIWYG 策略 |
+| `csv2MarkdownFile(InputStream, File, MarkdownOutputStrategy)` | `csv -> Markdown 文件`，指定策略 |
+
+## 输出策略
+
+转换方法支持两种输出策略，通过 `MarkdownOutputStrategy` 枚举选择。
+
+### WYSIWYG（默认）
+
+"所见即所得"，不附加行号和列号。数据第一行直接作为 Markdown 表格标题行，还原你在 Excel 里直接看到的样子。
+
+```java
+// 等价于显式传入 MarkdownOutputStrategy.WYSIWYG
+String markdown = Excel2MarkdownUtils.xlsx2Markdown(new File("report.xlsx"));
+```
+
+### NATIVE_COORDINATES
+
+输出原生坐标轴。表格标题行使用 Excel 列字母（A、B、C…），每行数据前追加 1-based 行号，左上角占位为 `Rows`。适合需要精确定位单元格、做坐标引用或喂给 LLM 时携带位置信息的场景。
+
+```java
+String markdown = Excel2MarkdownUtils.xlsx2Markdown(
+        new File("report.xlsx"),
+        MarkdownOutputStrategy.NATIVE_COORDINATES
+);
+```
+
+输出示例：
+
+```md
+> Note: Column headers use Excel column letters (A, B, C ...). Row numbers reflect the native row index starting from 1.
+
+| Rows | A | B | C |
+| --- | --- | --- | --- |
+| 1 | 姓名 | 年龄 | 城市 |
+| 2 | 张三 | 28 | 北京 |
+| 3 | 李四 | 32 | 上海 |
+```
 
 ## 输出规则
 
-这个项目不是简单地把每一行都硬塞进表格里，而是尽量让输出更适合人阅读。
+这个项目尽量让输出适合人阅读，而不是只吐原始值。
 
 ### 1. 多 Sheet 会顺序展开
 
@@ -185,16 +235,11 @@ try (InputStream inputStream = Files.newInputStream(Path.of("report.xlsx"))) {
 | ... |
 ```
 
-### 2. 单行单值会被识别成文本块
-
-有些 Excel 表其实不是纯二维表格，而是“标题 + 表格 + 说明”的混合结构。  
-当一行只有一个有效单元格时，库会把它当作普通文本输出，而不是强行补成难看的伪表格。
-
-### 3. 单元格里的换行会转成 `<br>`
+### 2. 单元格里的换行会转成 `<br>`
 
 这样既保留信息，也不会破坏 Markdown 表格结构。
 
-### 4. 单元格里的 `|` 会自动转义
+### 3. 单元格里的 `|` 会自动转义
 
 避免 Markdown 把内容误判成分隔列。
 
